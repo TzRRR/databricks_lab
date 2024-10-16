@@ -1,71 +1,55 @@
 """Query the database"""
+from databricks.sql import connect
+from dotenv import load_dotenv
+import os
 
-import sqlite3
+def query_complex_airline_data():
+    """Perform the complex query with joins, aggregation, and sorting in Databricks"""
+    
+    # Load environment variables
+    load_dotenv()
+    server_h = os.getenv("SERVER_HOSTNAME")
+    access_token = os.getenv("ACCESS_TOKEN")
+    http_path = os.getenv("HTTP_PATH")
 
+    # Connect to Databricks SQL Warehouse
+    with connect(
+        server_hostname=server_h,
+        http_path=http_path,
+        access_token=access_token,
+    ) as connection:
+        c = connection.cursor()
 
-def query(db_name="AirlineDB.db"):
-    """Query the database for the rows of the AirlineDB table"""
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM AirlineDB")
-    rows = cursor.fetchall()
-    conn.close()
-    return rows
-
-
-def create(
-    airline, avail_seat_km_per_week, incidents_85_99, fatal_accidents_85_99,
-    fatalities_85_99, incidents_00_14, fatal_accidents_00_14, fatalities_00_14,
-    db_name="AirlineDB.db"
-):
-    """Insert a new row into the AirlineDB table"""
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute(
+        # Perform the complex SQL query
+        query = """
+        SELECT 
+            A.airline, 
+            SUM(A.incidents_85_99 + A.incidents_00_14) AS total_incidents, 
+            SUM(A.fatalities_85_99 + A.fatalities_00_14) AS total_fatalities, 
+            B.airline_code, 
+            B.region,
+            SUM(A.incidents_85_99 + A.incidents_00_14) AS total_incidents_per_region,
+            SUM(A.fatalities_85_99 + A.fatalities_00_14) AS total_fatalities_per_region
+        FROM 
+            AirlineDB1 A
+        JOIN 
+            AdditionalAirlineDB B
+        ON 
+            A.airline = B.airline
+        GROUP BY 
+            A.airline, B.airline_code, B.region
+        HAVING 
+            SUM(A.incidents_85_99 + A.incidents_00_14) > 0 
+        ORDER BY 
+            total_incidents_per_region DESC, 
+            total_fatalities_per_region DESC;
         """
-        INSERT INTO AirlineDB (
-            airline, avail_seat_km_per_week, incidents_85_99, fatal_accidents_85_99, 
-            fatalities_85_99, incidents_00_14, fatal_accidents_00_14, fatalities_00_14
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            airline, avail_seat_km_per_week, incidents_85_99, fatal_accidents_85_99,
-            fatalities_85_99, incidents_00_14, fatal_accidents_00_14, fatalities_00_14
-        )
-    )
-    conn.commit()
-    conn.close()
-    return f"Inserted airline: {airline}"
+        
+        # Execute the query
+        c.execute(query)
+        
+        # Fetch and return all the results
+        results = c.fetchall()
+        c.close()
 
-
-def update(airline, new_incidents_00_14, db_name="AirlineDB.db"):
-    """Update the number of incidents from 2000-2014 for a specific airline"""
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        UPDATE AirlineDB 
-        SET incidents_00_14 = ?
-        WHERE airline = ?
-        """,
-        (new_incidents_00_14, airline)
-    )
-    conn.commit()
-    conn.close()
-    return f"Updated airline: {airline} with incidents_00_14 = {new_incidents_00_14}"
-
-
-def delete(airline, db_name="AirlineDB.db"):
-    """Delete a specific airline from the AirlineDB table"""
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        DELETE FROM AirlineDB 
-        WHERE airline = ?
-        """,
-        (airline,)
-    )
-    conn.commit()
-    conn.close()
-    return f"Deleted airline: {airline}"
+    return results
