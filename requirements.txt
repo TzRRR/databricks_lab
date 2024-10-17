@@ -9,3 +9,5 @@ ruff==0.0.284
 databricks
 python-dotenv
 pandas
+databricks-sql-connector
+
