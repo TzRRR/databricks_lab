@@ -18,9 +18,9 @@ jobs:
       # Step 2: Set up environment variables using GitHub Secrets
       - name: Set up Environment Variables
         run: |
-          echo "SERVER_HOSTNAME=${{ Databricks.SERVER_HOSTNAME }}" >> $GITHUB_ENV
-          echo "HTTP_PATH=${{ Databricks.HTTP_PATH }}" >> $GITHUB_ENV
-          echo "ACCESS_TOKEN=${{ Databricks.ACCESS_TOKEN }}" >> $GITHUB_ENV
+          echo "SERVER_HOSTNAME=${{ DATABRICKS.SERVER_HOSTNAME }}" >> $GITHUB_ENV
+          echo "HTTP_PATH=${{ DATABRICKS.HTTP_PATH }}" >> $GITHUB_ENV
+          echo "ACCESS_TOKEN=${{ DATABRICKS.ACCESS_TOKEN }}" >> $GITHUB_ENV
 
       # Step 3: Install required packages
       - name: install packages
