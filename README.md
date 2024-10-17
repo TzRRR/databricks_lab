@@ -12,7 +12,7 @@ A Python project for performing a complex SQL query on Databricks database stori
 
    ```bash
    git clone <REPOSITORY_URL>
-   cd sqlite_lab
+   cd databricks_lab
    ```
 
 2. **Set up a virtual environment**
